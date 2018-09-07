@@ -31,14 +31,11 @@ RUN set -x &&\
 
 RUN set -x &&\
 	apt-get -y install debootstrap wget &&\
-	mkdir -p /armroot/usr/local/bin &&\
+	mkdir -p /armroot/bin /armroot/usr/local/bin /armroot/usr/local/sbin &&\
 	cd /armroot/usr/local/bin &&\
 	cp /root/work/qemu-*/arm-linux-user/qemu-arm ./qemu-user-static-execmyself &&\
 	cd /armroot/bin &&\
-	mv dash dash-arm &&\
 	cp /root/work/dash-*/src/dash ./dash-x86 &&\
-	cp dash-x86 dash &&\
-	mkdir -p /armroot/usr/local/sbin &&\
 	cd /armroot/usr/local/sbin &&\
 	ln -s /usr/bin/dpkg-deb &&\
 	ln -s /usr/bin/dpkg-split &&\
