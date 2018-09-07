@@ -1,4 +1,4 @@
-# qemu-user-static-execmyself-for-docker-automated-build
+# qemu-user-static-execmyself for docker automated build.
 
 We can't use binfmt on docker automated-build. This idea may be a solution.
 
