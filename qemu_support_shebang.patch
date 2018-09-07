@@ -1,0 +1,95 @@
+--- main_180901.c	2018-09-01 12:46:13.776389306 +0000
++++ main.c	2018-09-01 22:04:42.235214802 +0000
+@@ -4015,6 +4015,92 @@ int main(int argc, char **argv, char **e
+ 
+     ret = loader_exec(execfd, filename, target_argv, target_environ, regs,
+         info, &bprm);
++        do {
++		int	newfd;		/* is execfd closable? */
++		int	newargc;
++		const	char	*newfilename;
++		
++		if (ret != -ENOEXEC)
++			break;
++		
++		for (i=0; i < target_argc; i++)
++			free(target_argv[i]);
++		free(target_argv);
++		target_argv = NULL;
++		target_argv = calloc(target_argc + 3, sizeof (char *));
++		if (target_argv == NULL) {
++			(void) fprintf(stderr, "Unable to allocate memory for target_argv\n");
++			exit(1);
++		}
++		newargc = 0;
++		
++		if (bprm.buf[0] != '#')
++			;
++		else if (bprm.buf[1] != '!')
++			;
++		else {
++#define	MAXSHEBANGLEN	127
++			static	char	shebang[MAXSHEBANGLEN + 1];
++			int	shebanglen;
++			int	c;
++			
++			/* copy because bprm.buf will be broken when loading /bin/sh */
++			shebanglen = 0;
++			for (;;) {
++				if ((c = bprm.buf[shebanglen]) == 0)
++					break;
++				if ((c == 0xa)||(c == 0xd))
++					break;
++				shebang[shebanglen++] = c;
++				if (shebanglen > MAXSHEBANGLEN)
++					break;
++			}
++			if (shebanglen > MAXSHEBANGLEN)
++				break;
++			shebang[shebanglen] = 0;
++			
++			i = 2;
++			while (((c = shebang[i]) == 9)||(c == 0x20))
++				i++;
++			if (c == 0)
++				break;		/* empty line */
++			newfilename = shebang + i;
++			while ((c = shebang[i])&&(c != 9)&&(c != 0x20))
++				i++;
++			while (((c = shebang[i]) == 9)||(c == 0x20))
++				shebang[i++] = 0;
++			if ((newfd = open(newfilename, O_RDONLY)) < 0) {
++				printf("Error while loading %s: %s\n", newfilename, strerror(errno));
++				_exit(1);
++			}
++			target_argv[newargc++] = strdup(newfilename);
++			if ((c))
++				target_argv[newargc++] = strdup(shebang + i);
++			for (i = 0; i < target_argc; i++) {
++				target_argv[newargc++] = strdup(argv[optind + i]);
++			}
++#if 0
++		for (i=0; i<newargc; i++)
++			fprintf(stderr, "target_argv[%d}(%s)\n", i, target_argv[i]);
++#endif
++			ret = loader_exec(newfd, newfilename, target_argv, target_environ, regs, info, &bprm);
++			break;
++		}
++		newfilename = "/bin/sh";
++		if ((newfd = open(newfilename, O_RDONLY)) < 0) {
++			printf("Error while loading %s: %s\n", newfilename, strerror(errno));
++			_exit(1);
++		}
++		target_argv[newargc++] = strdup(newfilename);
++		for (i = 0; i < target_argc; i++) {
++			target_argv[newargc++] = strdup(argv[optind + i]);
++		}
++#if 0
++		for (i=0; i<newargc; i++)
++			fprintf(stderr, "target_argv[%d}(%s)\n", i, target_argv[i]);
++#endif
++		ret = loader_exec(newfd, newfilename, target_argv, target_environ, regs, info, &bprm);
++	} while(0);
+     if (ret != 0) {
+         printf("Error while loading %s: %s\n", filename, strerror(-ret));
+         _exit(1);

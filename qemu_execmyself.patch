@@ -1,0 +1,69 @@
+--- syscall_180831.c	2018-08-31 10:33:00.843995428 +0000
++++ syscall.c	2018-09-02 01:59:17.487471474 +0000
+@@ -5523,9 +5523,9 @@
+             char **q;
+             int total_size = 0;
+ 
+-            argc = 0;
++            argc = 2;		/* for qemu and arg1 */
+             guest_argp = arg2;
+-            for (gp = guest_argp; gp; gp += sizeof(abi_ulong)) {
++            for (gp = guest_argp + sizeof(abi_ulong); gp; gp += sizeof(abi_ulong)) {
+                 if (get_user_ual(addr, gp))
+                     goto efault;
+                 if (!addr)
+@@ -5545,8 +5545,18 @@
+             argp = alloca((argc + 1) * sizeof(void *));
+             envp = alloca((envc + 1) * sizeof(void *));
+ 
+-            for (gp = guest_argp, q = argp; gp;
++	    *envp = NULL;	/* avoid calling unlock_user with broken-pointer from alloca non-zero memory when jump to execve_efault.  */
++	    q = argp;
++	    *q = "/usr/local/bin/qemu-user-static-execmyself";
++	    total_size += strlen(*q) + 1;
++	    q++;
++            if (!(*q = lock_user_string(arg1)))
++                goto execve_efault;
++	    total_size += strlen(*q) + 1;
++	    q++;
++            for (gp = guest_argp + sizeof(abi_ulong); gp;
+                   gp += sizeof(abi_ulong), q++) {
++		*q = NULL;
+                 if (get_user_ual(addr, gp))
+                     goto execve_efault;
+                 if (!addr)
+@@ -5559,6 +5569,7 @@
+ 
+             for (gp = guest_envp, q = envp; gp;
+                   gp += sizeof(abi_ulong), q++) {
++		*q = NULL;
+                 if (get_user_ual(addr, gp))
+                     goto execve_efault;
+                 if (!addr)
+@@ -5575,10 +5586,10 @@
+                 ret = -TARGET_E2BIG;
+                 goto execve_end;
+             }
+-            if (!(p = lock_user_string(arg1)))
+-                goto execve_efault;
+-            ret = get_errno(execve(p, argp, envp));
+-            unlock_user(p, arg1, 0);
++#if 0
++fprintf(stderr, "execve (%s) (%s)\n", argp[0], argp[1]);
++#endif
++            ret = get_errno(execve(argp[0], argp, envp));
+ 
+             goto execve_end;
+ 
+@@ -5586,7 +5597,10 @@
+             ret = -TARGET_EFAULT;
+ 
+         execve_end:
+-            for (gp = guest_argp, q = argp; *q;
++	    q = argp;
++	    unlock_user(*q, addr, 0);
++	    q++;
++            for (gp = guest_argp + sizeof(abi_ulong); *q;
+                   gp += sizeof(abi_ulong), q++) {
+                 if (get_user_ual(addr, gp)
+                     || !addr)

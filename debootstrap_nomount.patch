@@ -1,0 +1,135 @@
+--- functions_180903	2018-09-02 21:30:58.401863773 +0000
++++ functions	2018-09-02 21:48:39.348197200 +0000
+@@ -976,12 +976,13 @@
+ UMOUNT_DIRS=
+ 
+ umount_exit_function () {
+-	local realdir
+-	for dir in $UMOUNT_DIRS; do
+-		realdir="$(in_target_nofail readlink -f "$dir")"
+-		[ "$realdir" ] || continue
+-		( cd / ; umount "$TARGET/${realdir#/}" ) || true
+-	done
++#	local realdir
++#	for dir in $UMOUNT_DIRS; do
++#		realdir="$(in_target_nofail readlink -f "$dir")"
++#		[ "$realdir" ] || continue
++#		( cd / ; umount "$TARGET/${realdir#/}" ) || true
++#	done
++	true
+ }
+ 
+ umount_on_exit () {
+@@ -1000,36 +1001,37 @@
+ }
+ 
+ setup_proc () {
+-	case "$HOST_OS" in
+-	    *freebsd*)
+-		umount_on_exit /dev
+-		umount_on_exit /proc
+-		umount "$TARGET/proc" 2>/dev/null || true
+-		if [ "$HOST_OS" = kfreebsd ]; then
+-			in_target mount -t linprocfs proc /proc
+-		else
+-			mount -t linprocfs proc $TARGET/proc
+-		fi
+-		;;
+-	    hurd*)
+-		;;
+-	    *)
+-		umount_on_exit /dev/pts
+-		umount_on_exit /dev/shm
+-		umount_on_exit /proc/bus/usb
+-		umount_on_exit /proc
+-		umount "$TARGET/proc" 2>/dev/null || true
+-		in_target mount -t proc proc /proc
+-		if [ -d "$TARGET/sys" ] && \
+-		   grep -q '[[:space:]]sysfs' /proc/filesystems 2>/dev/null; then
+-			umount_on_exit /sys
+-			umount "$TARGET/sys" 2>/dev/null || true
+-			in_target mount -t sysfs sysfs /sys
+-		fi
+-		on_exit clear_mtab
+-		;;
+-	esac
+-	umount_on_exit /lib/init/rw
++#	case "$HOST_OS" in
++#	    *freebsd*)
++#		umount_on_exit /dev
++#		umount_on_exit /proc
++#		umount "$TARGET/proc" 2>/dev/null || true
++#		if [ "$HOST_OS" = kfreebsd ]; then
++#			in_target mount -t linprocfs proc /proc
++#		else
++#			mount -t linprocfs proc $TARGET/proc
++#		fi
++#		;;
++#	    hurd*)
++#		;;
++#	    *)
++#		umount_on_exit /dev/pts
++#		umount_on_exit /dev/shm
++#		umount_on_exit /proc/bus/usb
++#		umount_on_exit /proc
++#		umount "$TARGET/proc" 2>/dev/null || true
++#		in_target mount -t proc proc /proc
++#		if [ -d "$TARGET/sys" ] && \
++#		   grep -q '[[:space:]]sysfs' /proc/filesystems 2>/dev/null; then
++#			umount_on_exit /sys
++#			umount "$TARGET/sys" 2>/dev/null || true
++#			in_target mount -t sysfs sysfs /sys
++#		fi
++#		on_exit clear_mtab
++#		;;
++#	esac
++#	umount_on_exit /lib/init/rw
++	true
+ }
+ 
+ setup_proc_fakechroot () {
+@@ -1043,25 +1045,25 @@
+ 		return 0
+ 	fi
+ 
+-	case "$HOST_OS" in
+-	    kfreebsd*)
+-		in_target mount -t devfs devfs /dev ;;
+-	    freebsd)
+-		mount -t devfs devfs $TARGET/dev ;;
+-	    hurd*)
+-		setup_devices_hurd ;;
+-	    *)
+-		if [ -e "$DEVICES_TARGZ" ]; then
+-			zcat "$DEVICES_TARGZ" | (cd "$TARGET"; tar -xf -)
+-		else
+-			if [ -e /dev/.devfsd ] ; then
+-				in_target mount -t devfs devfs /dev
+-			else
+-				error 1 NODEVTGZ "no %s. cannot create devices" "$DEVICES_TARGZ"
+-			fi
+-		fi
+-		;;
+-	esac
++#	case "$HOST_OS" in
++#	    kfreebsd*)
++#		in_target mount -t devfs devfs /dev ;;
++#	    freebsd)
++#		mount -t devfs devfs $TARGET/dev ;;
++#	    hurd*)
++#		setup_devices_hurd ;;
++#	    *)
++#		if [ -e "$DEVICES_TARGZ" ]; then
++#			zcat "$DEVICES_TARGZ" | (cd "$TARGET"; tar -xf -)
++#		else
++#			if [ -e /dev/.devfsd ] ; then
++#				in_target mount -t devfs devfs /dev
++#			else
++#				error 1 NODEVTGZ "no %s. cannot create devices" "$DEVICES_TARGZ"
++#			fi
++#		fi
++#		;;
++#	esac
+ }
+ 
+ setup_devices_hurd () {
