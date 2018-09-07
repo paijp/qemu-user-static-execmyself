@@ -11,3 +11,8 @@ We can't use binfmt on docker automated-build. This idea may be a solution.
 ## qemu-support-shebang.patch
 
 - You can now use 'qemu-user-static-execmyself ./test.sh' style.
+
+# debootstrap-nomount.patch
+
+- If use a Docker container, you don't have to mount /proc and other.
+- debootstrap-nomount.patch removes a mount/unmount command from `function' file.
